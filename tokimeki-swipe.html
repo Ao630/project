@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>ときめきスワイプ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1B1330;
+    --bg-soft:#241a3c;
+    --nav-bg:#180F29;
+    --surface:#FFF9F4;
+    --surface-2:#FFF1E7;
+    --ink:#24172F;
+    --ink-soft:#79708C;
+    --ink-faint:#B3AAC4;
+    --like:#FF5C77;
+    --like-dark:#E1445F;
+    --like-soft:#FFE0E6;
+    --pass:#9089A3;
+    --pass-soft:#EDEAF3;
+    --gold:#FFC857;
+    --on-dark:#F5EFFF;
+    --shadow: 0 20px 40px -12px rgba(20,10,40,0.45);
+    --radius-card: 28px;
+    --font-display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+    --font-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  }
+  :root:not([data-theme="light"]){ }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1330; --bg-soft:#241a3c; --nav-bg:#180F29;
+      --surface:#FFF9F4; --surface-2:#FFF1E7; --ink:#24172F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1330; --bg-soft:#241a3c; --nav-bg:#180F29;
+    --surface:#FFF9F4; --surface-2:#FFF1E7; --ink:#24172F;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--bg);
+    font-family:var(--font-body);
+    color:var(--ink);
+    overflow:hidden;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  #app{
+    position:relative;
+    max-width:460px;
+    margin:0 auto;
+    height:100dvh;
+    height:100vh;
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,0.4);
+  }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    flex:0 0 auto;
+    padding:20px 22px 10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    color:var(--on-dark);
+  }
+  .brand .mark{
+    font-family:var(--font-display);
+    font-weight:900;
+    font-size:22px;
+    letter-spacing:.02em;
+  }
+  .brand .sub{
+    font-size:11px;
+    color:var(--ink-faint);
+  }
+  .stack-count{
+    font-size:12px;
+    color:var(--ink-faint);
+    background:rgba(255,255,255,0.06);
+    padding:6px 12px;
+    border-radius:999px;
+  }
+
+  /* ---------- Screens container ---------- */
+  .screens{ position:relative; flex:1 1 auto; min-height:0; }
+  .screen{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    min-height:0;
+  }
+  .screen.hidden{ display:none; }
+
+  /* ================= SWIPE SCREEN ================= */
+  #screen-swipe{ padding:4px 22px 0; }
+  .card-stage{
+    position:relative;
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .card{
+    position:absolute;
+    width:100%;
+    max-width:340px;
+    height:88%;
+    max-height:520px;
+    background:var(--surface);
+    border-radius:var(--radius-card);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    touch-action:none;
+    will-change:transform;
+  }
+  .card.behind{ transform:scale(0.94) translateY(14px); box-shadow:none; }
+  .card .avatar-wrap{
+    position:relative;
+    flex:1 1 auto;
+    min-height:0;
+    background:linear-gradient(160deg,#eee,#ddd);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card .avatar-wrap svg{ width:100%; height:100%; display:block; }
+  .card .info{
+    flex:0 0 auto;
+    padding:16px 20px 20px;
+    background:var(--surface);
+    position:relative;
+  }
+  .card .name-row{
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .card .name-row .name{
+    font-family:var(--font-display);
+    font-weight:900;
+    font-size:24px;
+    color:var(--ink);
+  }
+  .card .name-row .age{
+    font-size:17px;
+    color:var(--ink-soft);
+    font-weight:700;
+  }
+  .card .bio{
+    margin-top:6px;
+    font-size:14px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .tap-hint{
+    position:absolute;
+    top:14px; right:14px;
+    font-size:11px;
+    color:#fff;
+    background:rgba(20,10,35,0.38);
+    backdrop-filter:blur(6px);
+    padding:6px 10px;
+    border-radius:999px;
+  }
+  .stamp{
+    position:absolute;
+    top:34px;
+    padding:8px 18px;
+    border:4px solid;
+    border-radius:14px;
+    font-family:var(--font-display);
+    font-weight:900;
+    font-size:26px;
+    letter-spacing:.05em;
+    opacity:0;
+    transform:rotate(-18deg);
+    pointer-events:none;
+  }
+  .stamp.like{ left:20px; color:var(--like); border-color:var(--like); }
+  .stamp.pass{ right:20px; color:var(--pass); border-color:var(--pass); transform:rotate(18deg); }
+
+  .swipe-actions{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:26px;
+    padding:14px 0 18px;
+  }
+  .round-btn{
+    width:60px;height:60px;
+    border-radius:50%;
+    border:none;
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;
+    cursor:pointer;
+    box-shadow:0 10px 22px -6px rgba(0,0,0,0.5);
+    transition:transform .12s ease;
+  }
+  .round-btn:active{ transform:scale(0.88); }
+  .round-btn.pass{ background:var(--surface); color:var(--pass); }
+  .round-btn.like{ background:var(--like); color:#fff; width:70px;height:70px; font-size:28px; }
+  .round-btn.info{ background:var(--bg-soft); color:var(--gold); width:46px;height:46px; font-size:17px; }
+
+  .empty-state{
+    text-align:center; color:var(--ink-faint); padding:40px 20px;
+  }
+
+  /* ================= DETAIL SCREEN ================= */
+  #screen-detail{ background:var(--bg); }
+  .detail-hero{
+    position:relative;
+    height:52%;
+    flex:0 0 auto;
+  }
+  .detail-hero svg{ width:100%; height:100%; display:block; }
+  .back-btn{
+    position:absolute; top:18px; left:18px;
+    width:42px;height:42px;border-radius:50%;
+    background:rgba(20,10,35,0.4);
+    backdrop-filter:blur(6px);
+    color:#fff; border:none; font-size:18px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+  }
+  .detail-sheet{
+    flex:1 1 auto;
+    min-height:0;
+    background:var(--surface);
+    border-radius:26px 26px 0 0;
+    margin-top:-22px;
+    position:relative;
+    padding:22px 24px 20px;
+    overflow-y:auto;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+  }
+  .detail-sheet .name-row{
+    display:flex; align-items:baseline; gap:10px;
+  }
+  .detail-sheet .name-row .name{
+    font-family:var(--font-display); font-weight:900; font-size:28px; color:var(--ink);
+  }
+  .detail-sheet .name-row .age{ font-size:19px; color:var(--ink-soft); font-weight:700; }
+  .badge-row{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .badge{
+    font-size:12px; color:var(--ink-soft);
+    background:var(--pass-soft);
+    padding:6px 12px; border-radius:999px;
+  }
+  .detail-sheet .section-label{
+    margin-top:20px; font-size:12px; color:var(--ink-faint); font-weight:700;
+  }
+  .detail-sheet .bio-full{
+    margin-top:8px; font-size:15px; line-height:1.7; color:var(--ink);
+  }
+  .detail-actions{
+    display:flex; gap:12px; margin-top:24px;
+  }
+  .pill-btn{
+    flex:1;
+    border:none; border-radius:16px;
+    padding:15px 0;
+    font-family:var(--font-display);
+    font-weight:700; font-size:16px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .pill-btn.pass{ background:var(--pass-soft); color:var(--ink-soft); }
+  .pill-btn.like{ background:var(--like); color:#fff; }
+
+  /* ================= MY PROFILE SCREEN ================= */
+  #screen-profile{
+    background:var(--bg);
+    align-items:stretch;
+    overflow-y:auto;
+  }
+  .my-hero{
+    flex:0 0 auto;
+    padding:26px 24px 20px;
+    display:flex; flex-direction:column; align-items:center;
+    color:var(--on-dark);
+  }
+  .my-avatar{
+    width:132px;height:132px;border-radius:50%;
+    overflow:hidden;
+    border:4px solid rgba(255,255,255,0.15);
+    box-shadow:var(--shadow);
+  }
+  .my-avatar svg{ width:100%; height:100%; display:block; }
+  .my-hero .name{
+    font-family:var(--font-display); font-weight:900; font-size:24px;
+    margin-top:14px;
+  }
+  .my-hero .age{ font-size:14px; color:var(--ink-faint); margin-top:2px; }
+  .my-body{
+    flex:1 1 auto;
+    background:var(--surface);
+    border-radius:26px 26px 0 0;
+    padding:24px 24px 100px;
+  }
+  .my-body .section-label{ font-size:12px; color:var(--ink-faint); font-weight:700; }
+  .my-body .bio-full{ margin-top:8px; font-size:15px; line-height:1.7; color:var(--ink); }
+  .edit-btn{
+    margin-top:26px;
+    width:100%;
+    border:none; border-radius:16px;
+    padding:15px 0;
+    background:var(--ink);
+    color:#fff;
+    font-family:var(--font-display); font-weight:700; font-size:15px;
+    cursor:pointer;
+  }
+  .liked-row{ display:flex; gap:10px; margin-top:12px; overflow-x:auto; padding-bottom:6px; }
+  .liked-chip{
+    flex:0 0 auto; width:56px;height:56px;border-radius:50%; overflow:hidden;
+    border:2px solid var(--surface-2);
+  }
+  .liked-chip svg{ width:100%; height:100%; }
+  .no-likes{ font-size:13px; color:var(--ink-faint); margin-top:10px; }
+
+  /* ---------- Bottom Nav ---------- */
+  .bottom-nav{
+    flex:0 0 auto;
+    display:flex;
+    background:var(--nav-bg);
+    padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+    gap:6px;
+  }
+  .nav-btn{
+    flex:1;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:8px 0 6px;
+    border:none; background:none; cursor:pointer;
+    color:var(--ink-faint);
+    font-size:11px;
+    border-radius:14px;
+  }
+  .nav-btn .ic{ font-size:20px; }
+  .nav-btn.active{ color:var(--gold); background:rgba(255,200,87,0.08); }
+
+  /* ---------- Modal (edit profile) ---------- */
+  .modal-backdrop{
+    position:absolute; inset:0;
+    background:rgba(10,5,20,0.55);
+    display:flex; align-items:flex-end;
+    z-index:50;
+  }
+  .modal-backdrop.hidden{ display:none; }
+  .modal-sheet{
+    width:100%;
+    background:var(--surface);
+    border-radius:26px 26px 0 0;
+    padding:22px 22px calc(22px + env(safe-area-inset-bottom));
+    max-height:86%;
+    overflow-y:auto;
+  }
+  .modal-sheet h3{
+    font-family:var(--font-display); font-weight:900; font-size:19px; margin:0 0 16px;
+    color:var(--ink);
+  }
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block; font-size:12px; color:var(--ink-soft); font-weight:700; margin-bottom:6px;
+  }
+  .field input[type=text], .field textarea{
+    width:100%;
+    border:1.5px solid var(--surface-2);
+    background:var(--surface-2);
+    border-radius:12px;
+    padding:12px 14px;
+    font-family:var(--font-body);
+    font-size:15px;
+    color:var(--ink);
+    resize:none;
+  }
+  .field input[type=range]{ width:100%; accent-color:var(--like); }
+  .range-val{ font-size:13px; color:var(--ink-soft); }
+  .avatar-picker{
+    display:flex; gap:10px; overflow-x:auto; padding:4px 0;
+  }
+  .avatar-opt{
+    flex:0 0 auto; width:52px;height:52px;border-radius:50%; overflow:hidden;
+    border:2px solid transparent; cursor:pointer;
+  }
+  .avatar-opt.selected{ border-color:var(--like); }
+  .avatar-opt svg{ width:100%; height:100%; }
+  .modal-actions{ display:flex; gap:10px; margin-top:6px; }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:absolute; left:50%; bottom:96px;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:999px;
+    font-size:13px;
+    opacity:0;
+    transition:opacity .25s ease, transform .25s ease;
+    pointer-events:none;
+    z-index:60;
+    white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion: reduce){
+    .card, .stamp, .toast{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">ときめきスワイプ</span>
+    </div>
+    <div class="stack-count" id="stack-count">1 / 150</div>
+  </div>
+
+  <div class="screens">
+
+    <!-- SWIPE SCREEN -->
+    <div class="screen" id="screen-swipe">
+      <div class="card-stage" id="card-stage"></div>
+      <div class="swipe-actions">
+        <button class="round-btn pass" id="btn-pass" aria-label="パス">✕</button>
+        <button class="round-btn info" id="btn-info" aria-label="詳細">i</button>
+        <button class="round-btn like" id="btn-like" aria-label="いいね">♥</button>
+      </div>
+    </div>
+
+    <!-- DETAIL SCREEN -->
+    <div class="screen hidden" id="screen-detail">
+      <div class="detail-hero" id="detail-hero">
+        <button class="back-btn" id="detail-back">←</button>
+      </div>
+      <div class="detail-sheet">
+        <div class="name-row">
+          <span class="name" id="detail-name"></span>
+          <span class="age" id="detail-age"></span>
+        </div>
+        <div class="badge-row" id="detail-badges"></div>
+        <div class="section-label">自己紹介</div>
+        <div class="bio-full" id="detail-bio"></div>
+        <div class="detail-actions">
+          <button class="pill-btn pass" id="detail-pass">✕ パス</button>
+          <button class="pill-btn like" id="detail-like">♥ いいね</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY PROFILE SCREEN -->
+    <div class="screen hidden" id="screen-profile">
+      <div class="my-hero">
+        <div class="my-avatar" id="my-avatar"></div>
+        <div class="name" id="my-name"></div>
+        <div class="age" id="my-age"></div>
+      </div>
+      <div class="my-body">
+        <div class="section-label">自己紹介</div>
+        <div class="bio-full" id="my-bio"></div>
+        <button class="edit-btn" id="btn-edit">プロフィールを編集</button>
+
+        <div class="section-label" style="margin-top:28px;">いいねした相手</div>
+        <div class="liked-row" id="liked-row"></div>
+        <div class="no-likes" id="no-likes" style="display:none;">まだ誰にもいいねしていません。スワイプ画面で気になる相手にいいねしてみましょう。</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-swipe" data-screen="swipe"><span class="ic">🃏</span>スワイプ</button>
+    <button class="nav-btn" id="nav-profile" data-screen="profile"><span class="ic">👤</span>プロフィール</button>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal-backdrop hidden" id="modal-backdrop">
+    <div class="modal-sheet">
+      <h3>プロフィールを編集</h3>
+      <div class="field">
+        <label>アバター</label>
+        <div class="avatar-picker" id="avatar-picker"></div>
+      </div>
+      <div class="field">
+        <label>名前</label>
+        <input type="text" id="input-name" maxlength="20">
+      </div>
+      <div class="field">
+        <label>年齢: <span class="range-val" id="age-val"></span>歳</label>
+        <input type="range" id="input-age" min="18" max="40">
+      </div>
+      <div class="field">
+        <label>自己紹介文</label>
+        <textarea id="input-bio" rows="3" maxlength="60"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="pill-btn pass" id="btn-cancel">キャンセル</button>
+        <button class="pill-btn like" id="btn-save">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   1. PROFILE DATA GENERATION
+   ============================================================ */
+const lastNames = ["佐藤","鈴木","高橋","田中","伊藤","渡辺","山本","中村","小林","加藤",
+  "吉田","山田","佐々木","山口","松本","井上","木村","林","斎藤","清水",
+  "森","池田","橋本","阿部","石川","前田","藤田","後藤","岡田","長谷川",
+  "村上","近藤","石井","坂本","遠藤","青木","福田","三浦","西村","太田"];
+
+const firstNamesFemale = ["美咲","花子","葵","さくら","陽菜","結衣","愛","楓","凛","由美",
+  "彩香","真央","千尋","舞","里奈","あかり","ひかり","萌","菜々子","瑞希"];
+const firstNamesM = ["翔","健太","大輝","颯太","拓海","悠斗","蓮","陸","大和","翼",
+  "健二","雄大","智也","翔太","康平","涼太","優斗","海斗","大介","颯"];
+
+const bios = [
+  "休日はカフェ巡りしてます☕",
+  "映画を見るのが好きです🎬",
+  "最近ジムに通い始めました！",
+  "旅行が好きです。暇があればどこかに行きます✈️",
+  "ゲーム好きです。一緒に遊べる人募集中🎮",
+  "音楽を聴きながら散歩するのが好きです。",
+  "美味しいラーメン屋を探すのが趣味です🍜",
+  "週末は登山に行くことが多いです⛰️",
+  "猫を2匹飼っています🐱よろしくお願いします",
+  "写真を撮るのが好きで、いつもカメラ持ち歩いてます📷",
+  "料理が趣味です。最近はパン作りにハマってます🍞",
+  "読書が好きでミステリー小説をよく読みます📚",
+  "海が好きでよくサーフィンしてます🏄",
+  "ヨガとピラティスで心身ともにリフレッシュ中🧘",
+  "お酒より甘いものが好きです🍰",
+  "サッカー観戦が趣味です⚽応援よろしく！",
+  "キャンプにハマっていて道具集めが楽しいです🏕️",
+  "美術館巡りが好きです。おすすめあれば教えてください🎨",
+  "犬と散歩するのが日課です🐶",
+  "最近は自転車で遠出するのが楽しいです🚴",
+];
+const cleanBios = bios.concat([
+  "お笑い番組を見るのが好きでよく笑ってます😂",
+  "楽器を弾くのが趣味でギター練習中です🎸",
+  "コーヒーの飲み比べにハマってます☕",
+  "スポーツ全般好きです。特に野球観戦が好き⚾",
+  "手芸や裁縫が好きでよく小物を作ってます🧵",
+  "ボードゲームが好きで友達とよく集まってます🎲",
+  "スイーツ巡りが趣味です🍩",
+  "アウトドア派で川釣りが好きです🎣",
+  "ダンスを習っています。体を動かすのが好き💃",
+  "植物を育てるのが好きでベランダ菜園やってます🌱",
+  "温泉巡りが趣味です♨️のんびりするのが好き",
+  "プログラミングの勉強をしています💻",
+  "ワインが好きで少しずつ勉強中です🍷",
+  "マラソン大会によく出ています🏃",
+  "お城巡りが趣味で歴史が好きです🏯",
+]);
+
+const hobbies = ["カフェ巡り","映画鑑賞","筋トレ","旅行","ゲーム","音楽鑑賞","グルメ探索","登山",
+  "猫と遊ぶ","写真撮影","料理","読書","サーフィン","ヨガ","お菓子作り","サッカー観戦",
+  "キャンプ","美術館巡り","犬の散歩","サイクリング","楽器演奏","ダンス","釣り","ガーデニング",
+  "温泉巡り","プログラミング","マラソン","歴史・城巡り"];
+
+// deterministic PRNG
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+function pick(rng, arr){ return arr[Math.floor(rng()*arr.length)]; }
+function pickN(rng, arr, n){
+  const copy = arr.slice();
+  const out = [];
+  for(let i=0;i<n && copy.length;i++){
+    const idx = Math.floor(rng()*copy.length);
+    out.push(copy.splice(idx,1)[0]);
+  }
+  return out;
+}
+function shuffle(arr, rng){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor((rng?rng():Math.random())*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+const PROFILE_COUNT = 150;
+function generateProfiles(count){
+  const rng = mulberry32(20260919);
+  const usedBios = shuffle(cleanBios, rng);
+  const profiles = [];
+  for(let i=0;i<count;i++){
+    const gender = rng() < 0.5 ? "F" : "M";
+    const first = gender === "F" ? pick(rng, firstNamesFemale) : pick(rng, firstNamesM);
+    const last = pick(rng, lastNames);
+    const age = 18 + Math.floor(rng()*23);
+    const bio = usedBios[i % usedBios.length];
+    const hobbyList = pickN(rng, hobbies, 2 + Math.floor(rng()*2));
+    profiles.push({
+      id: "p"+i,
+      seed: i,
+      gender,
+      name: last + " " + first,
+      age,
+      bio,
+      hobbies: hobbyList
+    });
+  }
+  return profiles;
+}
+const PROFILES = generateProfiles(PROFILE_COUNT);
+
+/* ============================================================
+   2. PROCEDURAL AVATAR (illustrated, fictional — no real photos)
+   ============================================================ */
+const AVATAR_PALETTES = [
+  ["#FF8FA3","#FF5C77"], ["#FFE29A","#FFC857"], ["#8FE9DE","#4FD1C5"],
+  ["#C3B8FF","#8B7CF6"], ["#A7E3FF","#5AC8FA"], ["#B6F5DA","#6EE7B7"],
+  ["#FFD1A8","#FFA36C"], ["#F5B8E0","#E27DC0"]
+];
+function avatarSVG(seed, opts){
+  opts = opts || {};
+  const rng = mulberry32(seed*97 + 13);
+  const [c1,c2] = AVATAR_PALETTES[Math.floor(rng()*AVATAR_PALETTES.length)];
+  const faceColor = "#3A2B4D";
+  const eyeStyle = Math.floor(rng()*3); // 0 dot, 1 oval, 2 curved
+  const mouthStyle = Math.floor(rng()*3); // 0 smile, 1 open, 2 small
+  const hairStyle = Math.floor(rng()*4); // 0 none, 1 top blob, 2 side, 3 bangs
+  const hasBlush = rng() > 0.4;
+  const gid = "g"+seed+Math.floor(rng()*99999);
+
+  let hair = "";
+  if(hairStyle===1) hair = `<path d="M30 42 Q50 6 70 42 Q64 24 50 22 Q36 24 30 42Z" fill="${faceColor}" opacity="0.85"/>`;
+  if(hairStyle===2) hair = `<path d="M26 40 Q24 14 50 12 Q76 14 74 40 Q70 20 50 20 Q30 20 26 40Z" fill="${faceColor}" opacity="0.85"/>`;
+  if(hairStyle===3) hair = `<path d="M26 38 Q28 14 50 14 Q72 14 74 38 Q60 30 50 30 Q40 30 26 38Z" fill="${faceColor}" opacity="0.85"/>`;
+
+  let eyes = "";
+  if(eyeStyle===0) eyes = `<circle cx="40" cy="52" r="3.2" fill="${faceColor}"/><circle cx="60" cy="52" r="3.2" fill="${faceColor}"/>`;
+  if(eyeStyle===1) eyes = `<ellipse cx="40" cy="52" rx="3" ry="4.2" fill="${faceColor}"/><ellipse cx="60" cy="52" rx="3" ry="4.2" fill="${faceColor}"/>`;
+  if(eyeStyle===2) eyes = `<path d="M36 51 Q40 47 44 51" stroke="${faceColor}" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M56 51 Q60 47 64 51" stroke="${faceColor}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+
+  let mouth = "";
+  if(mouthStyle===0) mouth = `<path d="M42 64 Q50 71 58 64" stroke="${faceColor}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  if(mouthStyle===1) mouth = `<ellipse cx="50" cy="65" rx="6" ry="4.5" fill="${faceColor}"/>`;
+  if(mouthStyle===2) mouth = `<path d="M46 65 Q50 67 54 65" stroke="${faceColor}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+
+  const blush = hasBlush ? `<ellipse cx="33" cy="60" rx="4.5" ry="2.6" fill="#FF8FA3" opacity="0.55"/><ellipse cx="67" cy="60" rx="4.5" ry="2.6" fill="#FF8FA3" opacity="0.55"/>` : "";
+
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${c1}"/>
+        <stop offset="100%" stop-color="${c2}"/>
+      </linearGradient>
+    </defs>
+    <rect width="100" height="100" fill="url(#${gid})"/>
+    <circle cx="50" cy="58" r="27" fill="#FFF6EF" opacity="0.95"/>
+    ${blush}
+    ${eyes}
+    ${mouth}
+    ${hair}
+  </svg>`;
+}
+
+/* ============================================================
+   3. STATE
+   ============================================================ */
+const STORAGE_KEY_PROFILE = "tokimeki_my_profile_v1";
+const STORAGE_KEY_LIKES = "tokimeki_liked_v1";
+
+function loadJSON(key, fallback){
+  try{
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  }catch(e){ return fallback; }
+}
+function saveJSON(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){ /* ignore */ }
+}
+
+let myProfile = loadJSON(STORAGE_KEY_PROFILE, {
+  name: "あなた",
+  age: 26,
+  bio: "はじめまして！よろしくお願いします😊",
+  avatarSeed: 12345
+});
+let likedIds = loadJSON(STORAGE_KEY_LIKES, []);
+
+let deck = shuffle(PROFILES);
+let deckIndex = 0;
+let currentScreen = "swipe";
+
+function nextInDeck(){
+  if(deckIndex >= deck.length){
+    deck = shuffle(PROFILES);
+    deckIndex = 0;
+  }
+  return deck[deckIndex];
+}
+function peekAfter(){
+  const idx2 = deckIndex+1;
+  if(idx2 >= deck.length) return deck[0];
+  return deck[idx2];
+}
+function advanceDeck(){
+  deckIndex++;
+}
+
+/* ============================================================
+   4. RENDER — SWIPE SCREEN
+   ============================================================ */
+const stage = document.getElementById("card-stage");
+const stackCountEl = document.getElementById("stack-count");
+let activeCard = null;
+let drag = null; // {startX,startY,curX,curY,moved,pointerId}
+
+function buildCardEl(profile, behind){
+  const el = document.createElement("div");
+  el.className = "card" + (behind ? " behind" : "");
+  el.innerHTML = `
+    <div class="avatar-wrap">
+      ${avatarSVG(profile.seed)}
+      <div class="tap-hint">タップで詳細</div>
+      <div class="stamp like">LIKE</div>
+      <div class="stamp pass">PASS</div>
+    </div>
+    <div class="info">
+      <div class="name-row"><span class="name">${profile.name}</span><span class="age">${profile.age}歳</span></div>
+      <div class="bio">${profile.bio}</div>
+    </div>
+  `;
+  return el;
+}
+
+function renderSwipeStage(){
+  stage.innerHTML = "";
+  const current = nextInDeck();
+  const upcoming = peekAfter();
+
+  const backEl = buildCardEl(upcoming, true);
+  stage.appendChild(backEl);
+
+  const frontEl = buildCardEl(current, false);
+  stage.appendChild(frontEl);
+  activeCard = { el: frontEl, profile: current };
+
+  attachDrag(frontEl, current);
+  stackCountEl.textContent = (deckIndex+1) + " / " + PROFILES.length;
+}
+
+function attachDrag(el, profile){
+  const likeStamp = el.querySelector(".stamp.like");
+  const passStamp = el.querySelector(".stamp.pass");
+
+  el.addEventListener("pointerdown", (e)=>{
+    drag = { startX:e.clientX, startY:e.clientY, curX:0, curY:0, moved:false, pointerId:e.pointerId };
+    el.setPointerCapture(e.pointerId);
+    el.style.transition = "none";
+  });
+  el.addEventListener("pointermove", (e)=>{
+    if(!drag || drag.pointerId!==e.pointerId) return;
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    drag.curX = dx; drag.curY = dy;
+    if(Math.abs(dx) > 6 || Math.abs(dy) > 6) drag.moved = true;
+    const rot = dx / 18;
+    el.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
+    const ratio = Math.min(Math.abs(dx)/110, 1);
+    if(dx > 0){ likeStamp.style.opacity = ratio; passStamp.style.opacity = 0; }
+    else { passStamp.style.opacity = ratio; likeStamp.style.opacity = 0; }
+  });
+  const endHandler = (e)=>{
+    if(!drag || drag.pointerId!==e.pointerId) return;
+    el.style.transition = "transform .3s cubic-bezier(.2,.8,.3,1)";
+    const dx = drag.curX;
+    const wasMoved = drag.moved;
+    drag = null;
+    if(Math.abs(dx) > 110){
+      commitSwipe(dx > 0 ? "like" : "pass", profile);
+    } else if(!wasMoved){
+      openDetail(profile);
+      el.style.transform = "";
+    } else {
+      el.style.transform = "";
+      el.querySelector(".stamp.like").style.opacity = 0;
+      el.querySelector(".stamp.pass").style.opacity = 0;
+    }
+  };
+  el.addEventListener("pointerup", endHandler);
+  el.addEventListener("pointercancel", endHandler);
+}
+
+function commitSwipe(direction, profile){
+  if(!activeCard) return;
+  const el = activeCard.el;
+  el.style.transition = "transform .35s ease-in";
+  const flyX = direction === "like" ? 600 : -600;
+  const rot = direction === "like" ? 22 : -22;
+  el.style.transform = `translate(${flyX}px, -40px) rotate(${rot}deg)`;
+  if(direction === "like"){
+    addLike(profile);
+    showToast(profile.name + " さんに いいね！ 💖");
+  } else {
+    showToast(profile.name + " さんを パス");
+  }
+  advanceDeck();
+  setTimeout(()=>{
+    renderSwipeStage();
+  }, 260);
+}
+
+document.getElementById("btn-like").addEventListener("click", ()=>{
+  if(activeCard) commitSwipe("like", activeCard.profile);
+});
+document.getElementById("btn-pass").addEventListener("click", ()=>{
+  if(activeCard) commitSwipe("pass", activeCard.profile);
+});
+document.getElementById("btn-info").addEventListener("click", ()=>{
+  if(activeCard) openDetail(activeCard.profile);
+});
+
+/* ============================================================
+   5. DETAIL SCREEN
+   ============================================================ */
+const detailHero = document.getElementById("detail-hero");
+let detailProfile = null;
+
+function openDetail(profile){
+  detailProfile = profile;
+  detailHero.innerHTML = `<button class="back-btn" id="detail-back">←</button>` + avatarSVG(profile.seed);
+  document.getElementById("detail-back").addEventListener("click", closeDetail);
+  document.getElementById("detail-name").textContent = profile.name;
+  document.getElementById("detail-age").textContent = profile.age + "歳";
+  document.getElementById("detail-bio").textContent = profile.bio;
+  const badgeRow = document.getElementById("detail-badges");
+  badgeRow.innerHTML = profile.hobbies.map(h=>`<span class="badge">${h}</span>`).join("");
+  goToScreen("detail");
+}
+function closeDetail(){
+  goToScreen("swipe");
+}
+document.getElementById("detail-pass").addEventListener("click", ()=>{
+  if(detailProfile){
+    showToast(detailProfile.name + " さんを パス");
+    advanceDeck();
+    renderSwipeStage();
+  }
+  goToScreen("swipe");
+});
+document.getElementById("detail-like").addEventListener("click", ()=>{
+  if(detailProfile){
+    addLike(detailProfile);
+    showToast(detailProfile.name + " さんに いいね！ 💖");
+    advanceDeck();
+    renderSwipeStage();
+  }
+  goToScreen("swipe");
+});
+
+/* ============================================================
+   6. LIKES
+   ============================================================ */
+function addLike(profile){
+  if(!likedIds.includes(profile.id)){
+    likedIds = [profile.id, ...likedIds].slice(0, 40);
+    saveJSON(STORAGE_KEY_LIKES, likedIds);
+  }
+  renderLiked();
+}
+function renderLiked(){
+  const row = document.getElementById("liked-row");
+  const empty = document.getElementById("no-likes");
+  const likedProfiles = likedIds.map(id => PROFILES.find(p=>p.id===id)).filter(Boolean);
+  if(likedProfiles.length === 0){
+    row.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+  row.innerHTML = likedProfiles.map(p => `<div class="liked-chip" title="${p.name}">${avatarSVG(p.seed)}</div>`).join("");
+}
+
+/* ============================================================
+   7. MY PROFILE SCREEN
+   ============================================================ */
+function renderMyProfile(){
+  document.getElementById("my-avatar").innerHTML = avatarSVG(myProfile.avatarSeed);
+  document.getElementById("my-name").textContent = myProfile.name;
+  document.getElementById("my-age").textContent = myProfile.age + "歳";
+  document.getElementById("my-bio").textContent = myProfile.bio;
+  renderLiked();
+}
+
+/* ---- Edit modal ---- */
+const modalBackdrop = document.getElementById("modal-backdrop");
+const avatarPicker = document.getElementById("avatar-picker");
+let pendingAvatarSeed = myProfile.avatarSeed;
+
+function openEdit(){
+  document.getElementById("input-name").value = myProfile.name;
+  document.getElementById("input-age").value = myProfile.age;
+  document.getElementById("age-val").textContent = myProfile.age;
+  document.getElementById("input-bio").value = myProfile.bio;
+  pendingAvatarSeed = myProfile.avatarSeed;
+
+  const seeds = [myProfile.avatarSeed, ...Array.from({length:7}, (_,i)=> (myProfile.avatarSeed*7 + i*311) % 99999)];
+  avatarPicker.innerHTML = seeds.map(s => `<div class="avatar-opt ${s===pendingAvatarSeed?"selected":""}" data-seed="${s}">${avatarSVG(s)}</div>`).join("");
+  Array.from(avatarPicker.querySelectorAll(".avatar-opt")).forEach(opt=>{
+    opt.addEventListener("click", ()=>{
+      pendingAvatarSeed = parseInt(opt.dataset.seed, 10);
+      Array.from(avatarPicker.querySelectorAll(".avatar-opt")).forEach(o=>o.classList.remove("selected"));
+      opt.classList.add("selected");
+    });
+  });
+  modalBackdrop.classList.remove("hidden");
+}
+function closeEdit(){ modalBackdrop.classList.add("hidden"); }
+
+document.getElementById("btn-edit").addEventListener("click", openEdit);
+document.getElementById("btn-cancel").addEventListener("click", closeEdit);
+document.getElementById("input-age").addEventListener("input", (e)=>{
+  document.getElementById("age-val").textContent = e.target.value;
+});
+document.getElementById("btn-save").addEventListener("click", ()=>{
+  const name = document.getElementById("input-name").value.trim() || "あなた";
+  const age = parseInt(document.getElementById("input-age").value, 10) || 26;
+  const bio = document.getElementById("input-bio").value.trim() || "よろしくお願いします😊";
+  myProfile = { name, age, bio, avatarSeed: pendingAvatarSeed };
+  saveJSON(STORAGE_KEY_PROFILE, myProfile);
+  renderMyProfile();
+  closeEdit();
+  showToast("プロフィールを保存しました");
+});
+
+/* ============================================================
+   8. NAVIGATION
+   ============================================================ */
+function goToScreen(name){
+  currentScreen = name;
+  document.getElementById("screen-swipe").classList.toggle("hidden", name!=="swipe");
+  document.getElementById("screen-detail").classList.toggle("hidden", name!=="detail");
+  document.getElementById("screen-profile").classList.toggle("hidden", name!=="profile");
+  document.getElementById("nav-swipe").classList.toggle("active", name==="swipe" || name==="detail");
+  document.getElementById("nav-profile").classList.toggle("active", name==="profile");
+  if(name==="profile") renderMyProfile();
+}
+document.getElementById("nav-swipe").addEventListener("click", ()=> goToScreen("swipe"));
+document.getElementById("nav-profile").addEventListener("click", ()=> goToScreen("profile"));
+
+/* ============================================================
+   9. TOAST
+   ============================================================ */
+let toastTimer = null;
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove("show"), 1600);
+}
+
+/* ============================================================
+   10. INIT
+   ============================================================ */
+renderSwipeStage();
+renderMyProfile();
+})();
+</script>
+</body>
+</html>
